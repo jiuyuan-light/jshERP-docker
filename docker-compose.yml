@@ -11,9 +11,10 @@ services:
       SPRING_REDIS_PASSWORD: $REDIS_PASSWORD
     image: openjdk:8-jdk
     working_dir: /home/jshERP/jshERP-boot
-    command: ['bash', '-c', './start.sh && while true; do sleep 3600; done']
     volumes:
       - ./jshERP3.3-最新包/后端包/jshERP:/home/jshERP/jshERP-boot
+      - ./wait-for-mysql-and-start.sh:/home/jshERP/jshERP-boot/wait-for-mysql-and-start.sh
+    entrypoint: /home/jshERP/jshERP-boot/wait-for-mysql-and-start.sh
     depends_on:
       - mysql
       - redis
@@ -33,6 +34,12 @@ services:
       MYSQL_PASSWORD: $MYSQL_USER_PASSWORD
     ports:
       - '3306'
+    command:
+      [
+        'sh',
+        '-c',
+        'chmod 444 /etc/mysql/conf.d/utf8mb4.cnf && exec docker-entrypoint.sh mysqld',
+      ]
     volumes:
       - ./utf8mb4.cnf:/etc/mysql/conf.d/utf8mb4.cnf
       - ./jshERP3.3-最新包/后端包/jshERP/docs/jsh_erp.sql:/docker-entrypoint-initdb.d/jsh_erp.sql
