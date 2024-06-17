@@ -4,26 +4,29 @@ services:
     ports:
       - '9999'
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/jsh_erp?useUnicode=true&characterEncoding=utf8&useCursorFetch=true&defaultFetchSize=500&allowMultiQueries=true&rewriteBatchedStatements=true&useSSL=false
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:$MYSQL_SERVER_PORT/jsh_erp?useUnicode=true&characterEncoding=utf8&useCursorFetch=true&defaultFetchSize=500&allowMultiQueries=true&rewriteBatchedStatements=true&useSSL=false
       SPRING_DATASOURCE_USERNAME: jsh_erp
       SPRING_DATASOURCE_PASSWORD: $MYSQL_USER_PASSWORD
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PASSWORD: $REDIS_PASSWORD
+      MYSQL_SERVER_PORT: $MYSQL_SERVER_PORT
     image: openjdk:8-jdk
     working_dir: /home/jshERP/jshERP-boot
     volumes:
       - ./jshERP3.3-最新包/后端包/jshERP:/home/jshERP/jshERP-boot
-      - ./wait-for-mysql-and-start.sh:/home/jshERP/jshERP-boot/wait-for-mysql-and-start.sh
-    entrypoint: /home/jshERP/jshERP-boot/wait-for-mysql-and-start.sh
+      - ./wait-for-mysqld-and-start.sh:/home/jshERP/jshERP-boot/wait-for-mysqld-and-start.sh
+    entrypoint: ./wait-for-mysqld-and-start.sh
     depends_on:
       - mysql
       - redis
+    restart: unless-stopped
 
   redis:
     image: redis:5
     ports:
       - '6379'
     command: ['redis-server', '--requirepass', '$REDIS_PASSWORD']
+    restart: unless-stopped
 
   mysql:
     image: mysql:5.7
@@ -44,6 +47,7 @@ services:
       - ./utf8mb4.cnf:/etc/mysql/conf.d/utf8mb4.cnf
       - ./jshERP3.3-最新包/后端包/jshERP/docs/jsh_erp.sql:/docker-entrypoint-initdb.d/jsh_erp.sql
       - ./mysqldata:/var/lib/mysql
+    restart: unless-stopped
 
   nginx:
     image: nginx:1.21.5
@@ -54,3 +58,4 @@ services:
       - '127.0.0.1:3000:3000'
     depends_on:
       - erp-backend
+    restart: unless-stopped
